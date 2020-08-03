@@ -6,7 +6,7 @@ lock = Lock()
 s = socket.socket()
 client_list = []
 p2p_addr_dict = {}
-writable = False
+info = False
 
 
 def listening():
@@ -92,7 +92,7 @@ def p2p():
     while True:
         data, addr_client_udp = s_p2p.recvfrom(1024)
         src, port = addr_client_udp
-        if writable:
+        if info:
             print(f'收到 {src}:{port} 的udp连接 -> {data}')
         data = data.decode()
         try:
@@ -126,10 +126,10 @@ while True:
         for client in client_list:
             print(client.getpeername())
     elif text == 'info':
-        writable = True
+        info = True
         while True:
             try:
                 input()
             except:
-                writable = False
+                info = False
                 break
