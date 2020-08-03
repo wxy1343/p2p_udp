@@ -1,6 +1,12 @@
 # p2p_udp
-命令列表  
+## 服务端
+ls 查看连接  
+close 关闭所有连接  
+info 查看详细信息
+ctrl+c 退出  
+## 客户端
 ls 查看连接设备  
 connect 连接设备  
 accept 接受连接  
-chat 聊天
+chat 聊天  
+ctrl+c 退出
