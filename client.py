@@ -1,8 +1,8 @@
 import ctypes
 import inspect
+import os
 import socket
 import time
-import os
 from queue import Queue
 from threading import Thread, Lock
 
@@ -38,7 +38,7 @@ def client():
             os._exit(0)
         try:
             t = type(eval(data))
-        except:
+        except (NameError, TypeError, SyntaxError):
             t = None
         if t is list:
             data = eval(data)
@@ -58,10 +58,12 @@ def client():
 def monitor_input():
     global t_p2p
     while True:
-        text = input('-> ')
+        try:
+            text = input('-> ')
+        except (EOFError, KeyboardInterrupt):
+            exit_handle()
         if text == 'exit':
-            s.close()
-            os._exit(0)
+            exit_handle()
         elif text == 'accept':
             if q.qsize() == 0:
                 print('当前没有请求')
@@ -75,7 +77,12 @@ def monitor_input():
                 t_p2p = Thread(target=p2p, args=(src, port))
                 t_p2p.start()
                 print('正在等待对方回应...')
-                data, addr = s_p2p.recvfrom(1024)
+                try:
+                    data, addr = s_p2p.recvfrom(1024)
+                except ConnectionResetError:
+                    print('连接已关闭')
+                    stop_thread(t_p2p)
+                    continue
                 src, port = addr
                 print(f'收到来自 {src}:{port} 的回应')
                 print('p2p建立成功')
@@ -94,7 +101,7 @@ def monitor_input():
                 text = input('请输入序号：')
                 try:
                     t = type(eval(text))
-                except:
+                except (NameError, TypeError):
                     t = None
                 if t is int:
                     n = int(text)
@@ -115,9 +122,10 @@ def monitor_input():
                         print('正在等待对方建立p2p...')
                         try:
                             data, addr = s_p2p.recvfrom(1024)
-                        except:
+                        except ConnectionResetError:
                             print('连接已关闭')
-                            return
+                            stop_thread(t_p2p)
+                            continue
                         src, port = addr
                         print(f'收到来自 {src}:{port} 的回应')
                         print('p2p建立成功')
@@ -161,7 +169,7 @@ def chat(s_p2p, addr):
             data = data.decode()
             try:
                 t = type(eval(data))
-            except:
+            except (NameError, TypeError):
                 t = None
             if not t is tuple:
                 print(data)
@@ -203,6 +211,17 @@ def p2p(src, port):
             except:
                 pass
         time.sleep(1)
+
+
+def exit_handle():
+    print('\n连接已关闭')
+    try:
+        s.send(b'exit')
+    except OSError:
+        pass
+    time.sleep(1)
+    s.close()
+    os._exit(0)
 
 
 Thread(target=client).start()
